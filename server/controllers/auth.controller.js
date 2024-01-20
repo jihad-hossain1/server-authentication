@@ -29,34 +29,44 @@ const handleLogin = async (req, res) => {
     const match = await bcrypt.compare(pwd, foundUser.password);
     //store the new user
 
-    const accessToken = jwt.sign(
-      { username: foundUser.username },
-      process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "30s" }
-    );
-    const refreshToken = jwt.sign(
-      { username: foundUser.username },
-      process.env.REFRESH_TOKEN_SECRET,
-      { expiresIn: "1m" }
-    );
+    if (match) {
+      const roles = Object.values(foundUser?.roles);
 
-    const otherUsers = userDb.users.filter(
-      (person) => person.username !== foundUser.username
-    );
+      const accessToken = jwt.sign(
+        {
+          UserInfo: {
+            username: foundUser.username,
+            roles: roles,
+          },
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: "30s" }
+      );
+      const refreshToken = jwt.sign(
+        { username: foundUser.username },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: "2m" }
+      );
 
-    const currentUser = { ...foundUser, refreshToken };
+      const otherUsers = userDb.users.filter(
+        (person) => person.username !== foundUser.username
+      );
 
-    userDb.setUsers([...otherUsers, currentUser]);
+      const currentUser = { ...foundUser, refreshToken };
 
-    await fsPromises.writeFile(
-      path.join(__dirname, "..", "models", "users.json"),
-      JSON.stringify(userDb.users)
-    );
-    res.cookie("jwt", refreshToken, {
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000,
-    });
-    res.status(200).json({ accessToken });
+      userDb.setUsers([...otherUsers, currentUser]);
+
+      await fsPromises.writeFile(
+        path.join(__dirname, "..", "models", "users.json"),
+        JSON.stringify(userDb.users)
+      );
+      res.cookie("jwt", refreshToken, {
+        httpOnly: true,
+        // maxAge: 24 * 60 * 60 * 1000,
+        secure: true,
+      });
+      res.status(200).json({ accessToken });
+    }
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -24,7 +24,11 @@ const hadleNewUser = async (req, res) => {
   try {
     const hashedPwd = await bcrypt.hash(pwd, 10);
     //store the new user
-    const newUser = { username: user, password: hashedPwd };
+    const newUser = {
+      username: user,
+      password: hashedPwd,
+      roles: { User: 2001 },
+    };
 
     userDb.setUsers([...userDb.users, newUser]);
 

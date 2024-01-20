@@ -3,12 +3,12 @@ const jwt = require("jsonwebtoken");
 
 const verifyJwt = async (req, res, next) => {
   try {
-    const authHeader = req.headers["authorization"];
-    if (!authHeader)
+    const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (!authHeader?.startsWith("Bearer "))
       return res
         .status(401)
         .json({ message: "unauthorized or accesstoken are expire" });
-    console.log(authHeader);
+    // console.log(authHeader);
 
     const token = authHeader.split(" ")[1];
 
@@ -16,7 +16,8 @@ const verifyJwt = async (req, res, next) => {
       if (error) {
         return res.sendStatus(403).json({ message: `Invalid token: ${error}` });
       } else {
-        req.user = decoded.username;
+        req.user = decoded.UserInfo.username;
+        req.roles = decoded.UserInfo.roles;
         next();
       }
     });

@@ -5,10 +5,16 @@ const cors = require("cors");
 const PORT = 5000 || process.env.PORT;
 const cookieParser = require("cookie-parser");
 const userRoute = require("./routes/user.route");
+const credentials = require("./middleware/credentials");
+const corsOptions = require("./config/cors.Option");
 
-app.use(cors());
-app.use(express.json());
 app.use(cookieParser());
+
+app.use(credentials);
+
+app.use(cors(corsOptions));
+
+app.use(express.json());
 
 app.use("/api/v1", userRoute);
 
