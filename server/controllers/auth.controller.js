@@ -1,32 +1,22 @@
-const userDb = {
-  users: require("../models/users.json"),
-  setUsers: function (data) {
-    this.users = data;
-  },
-};
-
 const bcrypt = require("bcrypt");
-const fsPromises = require("fs").promises;
-const path = require("path");
 const jwt = require("jsonwebtoken");
-
-// console.log(process.env.ACCESS_TOKEN_SECRET, process.env.REFRESH_TOKEN_SECRET);
+const User = require("../models/users.model");
 
 const handleLogin = async (req, res) => {
-  const { user, pwd } = req.body;
+  const { username, password } = req.body;
 
-  if (!user || !pwd)
+  if (!username || !password)
     return res
       .status(400)
       .json({ message: "username and password are required" });
 
-  const foundUser = userDb.users.find((person) => person.username === user);
+  const foundUser = await User.findOne({ username });
 
   if (!foundUser)
     return res.sendStatus(409).json({ message: "user are not found" });
 
   try {
-    const match = await bcrypt.compare(pwd, foundUser.password);
+    const match = await bcrypt.compare(password, foundUser.password);
     //store the new user
 
     if (match) {
@@ -48,22 +38,17 @@ const handleLogin = async (req, res) => {
         { expiresIn: "2m" }
       );
 
-      const otherUsers = userDb.users.filter(
-        (person) => person.username !== foundUser.username
-      );
+      foundUser.refreshToken = refreshToken;
 
-      const currentUser = { ...foundUser, refreshToken };
+      const result = await foundUser.save();
 
-      userDb.setUsers([...otherUsers, currentUser]);
+      console.log(result);
 
-      await fsPromises.writeFile(
-        path.join(__dirname, "..", "models", "users.json"),
-        JSON.stringify(userDb.users)
-      );
       res.cookie("jwt", refreshToken, {
         httpOnly: true,
-        // maxAge: 24 * 60 * 60 * 1000,
-        secure: true,
+        maxAge: 24 * 60 * 60 * 1000,
+        // secure: true,
+        sameSite: "None",
       });
       res.status(200).json({ accessToken });
     }

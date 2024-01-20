@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const userRoute = require("./routes/user.route");
 const credentials = require("./middleware/credentials");
 const corsOptions = require("./config/cors.Option");
+const connetDTBS = require("./dtbs/connect.DTBS");
 
 app.use(cookieParser());
 
@@ -15,6 +16,8 @@ app.use(credentials);
 app.use(cors(corsOptions));
 
 app.use(express.json());
+
+connetDTBS();
 
 app.use("/api/v1", userRoute);
 
